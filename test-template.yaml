@@ -21,7 +21,11 @@ objects:
   metadata:
     name: reverse-proxy
     description: "This is a nginx reverse-proxy"
-
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: upstream-server
+    description: "This is a nginx upstream-server"
 - kind: BuildConfig
   apiVersion: v1
   metadata:
@@ -40,7 +44,7 @@ objects:
     output:
       to:
         kind: ImageStreamTag
-        name: 's2i-nginx:latest'
+        name: s2i-nginx:latest
 - kind: BuildConfig
   apiVersion: v1
   metadata:
@@ -48,7 +52,8 @@ objects:
   spec:
     triggers:
       -
-        type: ConfigChange
+        type: ImageChange
+        imageChange:
       -
         type: imagechange
         imageChange:
@@ -61,9 +66,154 @@ objects:
         uri: https://github.com/goern/nginx-rev-proxy-test
         ref: reverse-proxy
     strategy:
-      type: Docker
-      dockerStrategy:
+      type: Source
+      sourceStrategy:
+         from:
+           kind: ImageStreamTag
+           name: s2i-nginx:latest
     output:
       to:
         kind: ImageStreamTag
-        name: 'reverse-proxy:latest'
+        name: reverse-proxy:latest
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    name: upstream-server
+  spec:
+    triggers:
+      -
+        type: ImageChange
+        imageChange:
+      -
+        type: imagechange
+        imageChange:
+          from:
+            kind: ImageStreamTag
+            name: s2i-nginx:latest
+    source:
+      type: Git
+      git:
+        uri: https://github.com/goern/nginx-rev-proxy-test
+        ref: upstream-server
+    strategy:
+      type: Source
+      sourceStrategy:
+         from:
+           kind: ImageStreamTag
+           name: s2i-nginx:latest
+    output:
+      to:
+        kind: ImageStreamTag
+        name: upstream-server:latest
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: reverse-proxy
+    annotations:
+      description: This is the reverse proxy
+  spec:
+    strategy:
+      type: Rolling
+    triggers:
+      - type: ImageChange
+        imageChangeParams:
+          containerNames:
+            - reverse-proxy
+          from:
+            kind: ImageStreamTag
+            name: reverse-proxy:latest
+      - type: ConfigChange
+    replicas: 1
+    selector:
+      name: reverse-proxy
+    template:
+      metadata:
+        name: reverse-proxy
+        labels:
+          name: reverse-proxy
+      spec:
+        containers:
+          - name: reverse-proxy
+            image: ' '
+            ports:
+              - containerPort: 8080
+            readinessProbe:
+              failureThreshold: 3
+              httpGet:
+                path: /
+                port: 8080
+                scheme: HTTP
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 2
+            livenessProbe:
+              failureThreshold: 3
+              httpGet:
+                path: /
+                port: 8080
+                scheme: HTTP
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 2
+            resources:
+              limits:
+                cpu: 25m
+                memory: 16Mi
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: upstream-server
+    annotations:
+      description: This is the upstream server
+  spec:
+    strategy:
+      type: Rolling
+    triggers:
+      - type: ImageChange
+        imageChangeParams:
+          containerNames:
+            - upstream-server
+          from:
+            kind: ImageStreamTag
+            name: upstream-server:latest
+      - type: ConfigChange
+    replicas: 1
+    selector:
+      name: upstream-server
+    template:
+      metadata:
+        name: upstream-server
+        labels:
+          name: upstream-server
+      spec:
+        containers:
+          - name: upstream-server
+            image: ' '
+            ports:
+              - containerPort: 8080
+            readinessProbe:
+              failureThreshold: 3
+              httpGet:
+                path: /
+                port: 8080
+                scheme: HTTP
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 2
+            livenessProbe:
+              failureThreshold: 3
+              httpGet:
+                path: /
+                port: 8080
+                scheme: HTTP
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 2
+            resources:
+              limits:
+                cpu: 25m
+                memory: 16Mi
