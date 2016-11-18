@@ -63,8 +63,7 @@ objects:
     source:
       type: Git
       git:
-        uri: https://github.com/goern/nginx-rev-proxy-test
-        contextDir: reverse-proxy
+        uri: https://github.com/goern/nginx-rev-proxy-test-reverse-proxy.git
     strategy:
       type: Source
       sourceStrategy:
@@ -93,8 +92,7 @@ objects:
     source:
       type: Git
       git:
-        uri: https://github.com/goern/nginx-rev-proxy-test
-        contextDir: upstream-server
+        uri: https://github.com/goern/nginx-rev-proxy-test-upstream-server
     strategy:
       type: Source
       sourceStrategy:

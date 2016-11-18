@@ -1,0 +1,6 @@
+[submodule "reverse-proxy"]
+	path = reverse-proxy
+	url = git@github.com:goern/nginx-rev-proxy-test-reverse-proxy.git
+[submodule "upstream-server"]
+	path = upstream-server
+	url = git@github.com:goern/nginx-rev-proxy-test-upstream-server.git
