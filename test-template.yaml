@@ -1,0 +1,69 @@
+---
+kind: Template
+apiVersion: v1
+labels:
+  version: 1.0.0
+  group: test
+metadata:
+  annotations:
+    description: Just a Test, rh-nginx18, OpenShift Container Platform 3.3, a reverse proxy
+    tags: instant-app,test,nginx,reverse_proxy
+    version: 1.0.0
+  name: nginx-rev-proxy-test
+objects:
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: s2i-nginx
+    description: "This is a s2i for nginx 1.8"
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: reverse-proxy
+    description: "This is a nginx reverse-proxy"
+
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    name: s2i-nginx
+  spec:
+    triggers:
+      -
+        type: ConfigChange
+    source:
+      type: Git
+      git:
+        uri: https://github.com/goern/s2i-nginx
+    strategy:
+      type: Docker
+      dockerStrategy:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: 's2i-nginx:latest'
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    name: reverse-proxy
+  spec:
+    triggers:
+      -
+        type: ConfigChange
+      -
+        type: imagechange
+        imageChange:
+          from:
+            kind: ImageStreamTag
+            name: s2i-nginx:latest
+    source:
+      type: Git
+      git:
+        uri: https://github.com/goern/nginx-rev-proxy-test
+        ref: reverse-proxy
+    strategy:
+      type: Docker
+      dockerStrategy:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: 'reverse-proxy:latest'
