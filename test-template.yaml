@@ -64,7 +64,7 @@ objects:
       type: Git
       git:
         uri: https://github.com/goern/nginx-rev-proxy-test
-        ref: reverse-proxy
+        contextDir: reverse-proxy
     strategy:
       type: Source
       sourceStrategy:
@@ -94,7 +94,7 @@ objects:
       type: Git
       git:
         uri: https://github.com/goern/nginx-rev-proxy-test
-        ref: upstream-server
+        contextDir: upstream-server
     strategy:
       type: Source
       sourceStrategy:
@@ -217,3 +217,44 @@ objects:
               limits:
                 cpu: 25m
                 memory: 16Mi
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: reverse-proxy
+    annotations:
+      description: 'NGINX based reverse proxy'
+      service.alpha.openshift.io/dependencies: '[{"name":"upstream","namespace":"","kind":"Service"}]'
+  spec:
+    ports:
+      -
+        name: web
+        port: 80
+        targetPort: 8080
+    selector:
+      name: reverse-proxy
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: upstream
+    annotations:
+      description: 'NGINX based upstream server'
+  spec:
+    ports:
+      -
+        name: web
+        port: 80
+        targetPort: 8080
+    selector:
+      name: upstream-server
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: reverse-proxy
+  spec:
+    host: ""
+    to:
+      kind: Service
+      name: reverse-proxy
+      weight: 100
+    port:
+      targetPort: web
